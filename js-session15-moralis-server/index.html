@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moralis DEX</title>
+
+</head>
+
+<body>
+
+
+    <h1>MoralisSwap</h1>
+    <br>
+        <!-- Include Moralis on Your HTML Page -->
+        <button id="btn-login">Moralis Login</button>
+        <button id="btn-buy-crypto">Buy Crypto</button>
+        <button id="btn-logout">Logout</button>
+    <br>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Symbol</th>
+                <th>Amount</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody class="js-token-balances">
+
+        </tbody>
+    </table>
+
+    <!-- Moralis SDK code -->
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <script src="https://unpkg.com/moralis/dist/moralis.js"></script>
+
+    <script src="./dex.js"></script>
+
+</body>
+
+</html>
