@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Moralis DEX</title>
-
+    <link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
@@ -32,6 +32,23 @@
 
         </tbody>
     </table>
+
+    <form action="#" method="POST" class="exchange-form">
+        <div class="form-row">
+            <label>
+                <span class="js-from-token"></span>     <!-- shows you how much you own -->
+                Amount : 
+                <input type="text" name="from-amount" class="js-from-amount" disabled />    <!-- only enable when it is clicked -->
+            </label>
+            <div class="js-amount-error error"></div>
+        </div>
+        <div class="form-row">
+            <button type="submit" class="js-submit" disabled>Get Quote</button>    <!-- they are disabled because initially there is nothing to swap -->
+            <button class="js-cancel" disabled>Cancel</button>
+        </div>
+
+        <div class="js-quote-container"></div>                  
+    </form>
 
     <!-- Moralis SDK code -->
     <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
