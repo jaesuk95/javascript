@@ -5,11 +5,14 @@
 
 // https://docs.moralis.io/moralis-server/web3-sdk/account
 
+// INITIALISATION
 // connect to Moralis server
 const serverUrl = "https://he1dnxwzzthg.usemoralis.com:2053/server";
 const appId = "lveyyGYcXiYZPWnCeu8JpY9TacSMGZHQFBdnkQAl";
-
 Moralis.start({ serverUrl, appId });
+
+// Moralis.initialize("lveyyGYcXiYZPWnCeu8JpY9TacSMGZHQFBdnkQAl");
+// Moralis.serverUrl = "https://he1dnxwzzthg.usemoralis.com:2053/server";
 
 Moralis.initPlugins().then(() => console.log("plugins have been initialised"));  // buy crypto
 
@@ -21,11 +24,16 @@ const $amountInput = document.querySelector('.js-from-amount');
 //If you do not specify decimals, 18 decimals will be automatically used
 // const tokenValue = Moralis.Units.FromWei("2000000000000000000")
 
+// UTILITIES
 // Converting from Wei using custom function
+// const tokenValue = (value, decimals) =>
+//     (decimals ? value / Math.pow(10, decimals) : value);
+//Converting from Wei using custom function
 const tokenValue = (value, decimals) =>
-    (decimals ? value / Math.pow(10, decimals) : value);
+    (decimals ? value / Math.pow(10, decimals) : value);    
 
-
+// Log in with Metamask
+// LOGIN LOG OUT and INITIALISATION
 // add from here down (How to Login with MetaMask)
 async function login() {
     let user = Moralis.User.current();  // gets the current user
@@ -33,6 +41,9 @@ async function login() {
         user = await Moralis.authenticate();    // we ask moralis to hold authentication
     }
     console.log("logged in user:", user);
+    console.log(user.get("ethAddress"))
+    const balances = await Moralis.Web3.getAllERC20({chain: 'polygon' });
+    console.log(balances);  // provides what coins you hold
     getStats();
 }
 
@@ -51,20 +62,35 @@ async function initSwapForm(event){
     $amountInput.value =''; // clear the value because it can happen it is already enabled 
     document.querySelector('.js-submit').removeAttribute('disabled');
     document.querySelector('.js-cancel').removeAttribute('disabled');   
-    document.querySelector('.js-quote-container').innerHTML = '';           // generate a result automatically 
+    document.querySelector('.js-quote-container').innerHTML = '';           // generates a result automatically 
+    document.querySelector('.js-amount-error').innerText = '';
 }
 
+// getstats
 // because we want to use await function that is why we are using async function
 async function getStats() {
-    const balances = await Moralis.Web3API.account.getTokenBalances({ chain: 'polygon' });    // chain = the blockchain to get data from
+    // await Moralis.enableWeb3();
+    // const balances = await Moralis.Web3API.account.getTokenBalances({chain: 'bsc'});
+    // const balances = await Moralis.Web3API.account.getTokenBalances({chain: 'polygon'});    // chain = the blockchain to get data from
+    // const balances = await Moralis.Web3.getAllERC20();
+
+// getTokenBalances will not include what you get with getNativeBalance, 
+// getNativeBalance will return only the native currency balance as ETH or 
+// BNB and getTokenBalances will return what tokens has that particular address
+
+    // const balances = await Moralis.Web3API.account.getTokenBalances({chain: 'polygon'});
+    const balances = await Moralis.Web3.getAllERC20({chain: 'polygon' });
+    // const balances = await Moralis.Web3API.account.getNativeBalance({chain: 'polygon'});
     console.log(balances);  // provides what coins you hold
+    console.log("my balance ^");  // provides what coins you hold
+    // The innerHTML property sets or returns the HTML content (inner HTML) of an element.
     $tokenBalanceTBody.innerHTML = balances.map((token, index) => `
         <tr>
             <td>${index + 1}</td>
             <td>${token.symbol}</td>
             <td>${tokenValue(token.balance, token.decimals)}</td>
             <td>
-                <button class="js-swap"
+                <button class="js-swap btn btn-primary"
                     data-address="${token.token_address}"
                     data-symbol="${token.symbol}"
                     data-decimals="${token.decimals}"
@@ -92,12 +118,46 @@ async function logOut() {
     console.log("logged out");
 }
 
+
 // Using querySelector you can select anything, like elements by name, 
 // elements with class name and elements with ids. In above getElementById is specifically used for selecting element by ID.
 document.querySelector("#btn-login").addEventListener('click', login);
 document.querySelector("#btn-buy-crypto").addEventListener('click', buyCrypto)  // buy crypto (click listener)
 document.getElementById("btn-logout").addEventListener('click', logOut);
 
+// QUOTE/ SWAP
+// if we use await operator, we have to use async function
+async function formSubmitted(event){
+    event.preventDefault(); 
+    const fromAmount = Number.parseFloat($amountInput.value);
+    const fromMaxValue = Number.parseFloat($selectedToken.dataset.max);    // the values are entered as floating point
+    // debugger;
+    if (Number.isNaN(fromAmount) || fromAmount > fromMaxValue){     // || or operator (either a or b or both are true)
+        // invalid input    // if the value is larger than what you have or non-number characters have been submitted
+        document.querySelector('.js-amount-error').innerText = 'Invalid amount';
+    } else {
+        document.querySelector('.js-amount-error').innerText = '';
+    }
+}
+
+async function formCanceled(event){
+    event.preventDefault();             // preventDefault() method cancels the event if it is cancelable, ability to prevent a browser’s default behavior for events.
+    document.querySelector('.js-submit').removeAttribute('disabled', '');   // empty string = ''
+    document.querySelector('.js-cancel').removeAttribute('disabled', '');   
+    $amountInput.value =''; // clear the value because it can happen it is already enabled 
+    $amountInput.removeAttribute('disabled', '');   // this enabled input values 
+    delete $selectedToken.dataset.address;
+    delete $selectedToken.dataset.decimals;
+    delete $selectedToken.dataset.max;
+    document.querySelector('.js-quote-container').innerHTML = '';           // generate a result automatically 
+    document.querySelector('.js-amount-error').innerText = '';
+}
+
+document.querySelector('.js-submit').addEventListener('click', formSubmitted);
+document.querySelector('.js-cancel').addEventListener('click', formCanceled);
+
+
+// To token dropdown preparation
 // get top rank coins
 let API_URL = 'https://api.coincap.io/v2/assets';
 async function getTopTokens() {
@@ -117,9 +177,22 @@ async function getTickerData(tickerList) {   // the tickerList is transferred fr
     const tokens = await response.json();
     const tokenList = Object.values(tokens.tokens);
     let chainNetwork = tokenList.filter(token => tickerList.includes(token.symbol));    // tickers that contain a specific value
+    console.log(chainNetwork)
     return chainNetwork  // compares https://api.coincap.io/v2/assets to https://api.1inch.exchange/v3.0/56/tokens
 }
 
+// swap to 
+function renderTokenDropdown(tokens){
+    const options = tokens.map(token => `
+    // he value attribute specifies the value to be sent to a server when a form is submitted.
+    <option value="${token.address}-${token.decimals}">
+        ${token.name}
+    </option>
+    `).join('');
+    document.querySelector('[name=to-token]').innerHTML = options;
+}
+
+
 getTopTokens()              // gets the top 10 lists of coins from api.coincap website
     .then(getTickerData)    // the top 10 lists are passed into this section and 
-    .then(console.log)
+    .then(renderTokenDropdown);

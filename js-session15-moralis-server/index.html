@@ -6,54 +6,90 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Moralis DEX</title>
+    <!-- CSS only -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
     <link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
 
+    <div class="container">
 
-    <h1>MoralisSwap</h1>
-    <br>
+
+        <div class="row">
+            <div class="col-12 col-md-6">
+                <h1>MoralisSwap</h1>
+            </div>
+    
+            <div class="col-12 col-md-6 d-flex align-items-center justify-content-md-center">
+                <button id="btn-login" class="btn btn-primary btn-sm">Moralis Login</button>
+                <button id="btn-buy-crypto" class="btn btn-secondary btn-sm">Buy Crypto</button>
+                <button id="btn-logout" class="btn btn-secondary btn-sm">Logout</button>
+            </div>
+        </div>
+
+        <!-- Content here -->
+
         <!-- Include Moralis on Your HTML Page -->
-        <button id="btn-login">Moralis Login</button>
-        <button id="btn-buy-crypto">Buy Crypto</button>
-        <button id="btn-logout">Logout</button>
-    <br>
-    <table>
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Symbol</th>
-                <th>Amount</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody class="js-token-balances">
 
-        </tbody>
-    </table>
+        <br>
+        <table class="table table-dark table-striped">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Symbol</th>
+                    <th>Amount</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody class="js-token-balances">
 
-    <form action="#" method="POST" class="exchange-form">
-        <div class="form-row">
-            <label>
-                <span class="js-from-token"></span>     <!-- shows you how much you own -->
-                Amount : 
-                <input type="text" name="from-amount" class="js-from-amount" disabled />    <!-- only enable when it is clicked -->
-            </label>
-            <div class="js-amount-error error"></div>
-        </div>
-        <div class="form-row">
-            <button type="submit" class="js-submit" disabled>Get Quote</button>    <!-- they are disabled because initially there is nothing to swap -->
-            <button class="js-cancel" disabled>Cancel</button>
-        </div>
+            </tbody>
+        </table>
 
-        <div class="js-quote-container"></div>                  
-    </form>
+        <form action="#" method="POST" class="exchange-form">
+            <div class="row">
+                <div class="col-12 col-md-6 mb-2">
+                    <label>
+                        <span class="js-from-token"></span> <!-- shows you how much you own -->
+                        Amount :
+                        <input type="text" name="from-amount" class="js-from-amount" disabled />
+                        <!-- only enable when it is clicked -->
+                    </label>
+                    <div class="js-amount-error error"></div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label>
+                        Swap to:
+                        <select name="to-token"></select>
+                    </label>
+                </div>
+
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <button type="submit" class="js-submit btn btn-success btn-sm" disabled>Get Quote</button>
+                    <!-- they are disabled because initially there is nothing to swap -->
+                    <button class="js-cancel btn btn-warning btn-sm" disabled>Cancel</button>
+                </div>
+
+            </div>
+
+            <div class="js-quote-container"></div>
+        </form>
+    </div>
+
+
 
     <!-- Moralis SDK code -->
     <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
     <script src="https://unpkg.com/moralis/dist/moralis.js"></script>
-
+    <!-- JavaScript Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+        crossorigin="anonymous"></script>
     <script src="./dex.js"></script>
 
 </body>
