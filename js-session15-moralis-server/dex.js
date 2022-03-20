@@ -30,7 +30,7 @@ const $amountInput = document.querySelector('.js-from-amount');
 //     (decimals ? value / Math.pow(10, decimals) : value);
 //Converting from Wei using custom function
 const tokenValue = (value, decimals) =>
-    (decimals ? value / Math.pow(10, decimals) : value);    
+    (decimals ? value / Math.pow(10, decimals) : value);
 
 // Log in with Metamask
 // LOGIN LOG OUT and INITIALISATION
@@ -42,13 +42,13 @@ async function login() {
     }
     console.log("logged in user:", user);
     console.log(user.get("ethAddress"))
-    const balances = await Moralis.Web3.getAllERC20({chain: 'polygon' });
+    const balances = await Moralis.Web3.getAllERC20({ chain: 'polygon' });
     console.log(balances);  // provides what coins you hold
     getStats();
 }
 
 // swap function
-async function initSwapForm(event){
+async function initSwapForm(event) {
     event.preventDefault();             // preventDefault() method cancels the event if it is cancelable, ability to prevent a browser’s default behavior for events.
     // // e.target은 사용자가 클릭한 <li> 요소를 가리킴
     $selectedToken.innerText = event.target.dataset.symbol;     // target is the button which we clicked on, and the button has data (symbol)
@@ -59,9 +59,9 @@ async function initSwapForm(event){
     $selectedToken.dataset.decimals = event.target.dataset.decimals;
     $selectedToken.dataset.max = event.target.dataset.max;
     $amountInput.removeAttribute('disabled');   // this enabled input values 
-    $amountInput.value =''; // clear the value because it can happen it is already enabled 
+    $amountInput.value = ''; // clear the value because it can happen it is already enabled 
     document.querySelector('.js-submit').removeAttribute('disabled');
-    document.querySelector('.js-cancel').removeAttribute('disabled');   
+    document.querySelector('.js-cancel').removeAttribute('disabled');
     document.querySelector('.js-quote-container').innerHTML = '';           // generates a result automatically 
     document.querySelector('.js-amount-error').innerText = '';
 }
@@ -74,12 +74,12 @@ async function getStats() {
     // const balances = await Moralis.Web3API.account.getTokenBalances({chain: 'polygon'});    // chain = the blockchain to get data from
     // const balances = await Moralis.Web3.getAllERC20();
 
-// getTokenBalances will not include what you get with getNativeBalance, 
-// getNativeBalance will return only the native currency balance as ETH or 
-// BNB and getTokenBalances will return what tokens has that particular address
+    // getTokenBalances will not include what you get with getNativeBalance, 
+    // getNativeBalance will return only the native currency balance as ETH or 
+    // BNB and getTokenBalances will return what tokens has that particular address
 
     // const balances = await Moralis.Web3API.account.getTokenBalances({chain: 'polygon'});
-    const balances = await Moralis.Web3.getAllERC20({chain: 'polygon' });
+    const balances = await Moralis.Web3.getAllERC20({ chain: 'polygon' });
     // const balances = await Moralis.Web3API.account.getNativeBalance({chain: 'polygon'});
     console.log(balances);  // provides what coins you hold
     console.log("my balance ^");  // provides what coins you hold
@@ -103,7 +103,7 @@ async function getStats() {
 
     // to make sure all the clicks are listened, create a for loop
     // for each buttons(class named .js-swap) that have tokenBalanceTBody
-    for(let $btn of $tokenBalanceTBody.querySelectorAll('.js-swap')){
+    for (let $btn of $tokenBalanceTBody.querySelectorAll('.js-swap')) {
         $btn.addEventListener('click', initSwapForm);
     }
 }
@@ -127,24 +127,61 @@ document.getElementById("btn-logout").addEventListener('click', logOut);
 
 // QUOTE/ SWAP
 // if we use await operator, we have to use async function
-async function formSubmitted(event){
-    event.preventDefault(); 
+async function formSubmitted(event) {
+    event.preventDefault();
     const fromAmount = Number.parseFloat($amountInput.value);
     const fromMaxValue = Number.parseFloat($selectedToken.dataset.max);    // the values are entered as floating point
     // debugger;
-    if (Number.isNaN(fromAmount) || fromAmount > fromMaxValue){     // || or operator (either a or b or both are true)
+    if (Number.isNaN(fromAmount) || fromAmount > fromMaxValue) {     // || or operator (either a or b or both are true)
         // invalid input    // if the value is larger than what you have or non-number characters have been submitted
         document.querySelector('.js-amount-error').innerText = 'Invalid amount';
     } else {
         document.querySelector('.js-amount-error').innerText = '';
     }
+
+
+    // Submission of the quote request 
+    const fromDecimals = $selectedToken.dataset.decimals;
+    const fromTokenAddress = $selectedToken.dataset.address
+    const [toTokenAddress, toDecimals] = document.querySelector('[name=to-token]').value.split('-');
+
+    // https://moralis.io/plugins/1inch/            // swap tokens on chain by using 1Inch plugin
+    try {
+        const quote = await Moralis.Plugins.oneInch.quote({
+            chain: 'polygon', // The blockchain you want to use (eth/bsc/polygon)
+            fromTokenAddress: fromTokenAddress, // The token you want to swap
+            toTokenAddress: toTokenAddress, // The token you want to receive
+            amount: Moralis.Units.Token(fromAmount, fromDecimals).toString() // need to convert back to WEI
+        });
+        // const toAmount = tokenValue( , toDecimals);
+        console.log(quote);
+        //Example: We want to convert 0.5 BUSD. It has 18 decimals
+        // const busdInWei = Moralis.Units.Token("0.5", "18")
+        // expected result output: 500000000000000000 We
+        const toAmount = tokenValue(quote.toTokenAmount, toDecimals)
+        document.querySelector('.js-quote-container').innerHTML = `
+            <p>${fromAmount} ${quote.fromToken.symbol} = ${toAmount} ${quote.toToken.symbol}<p>
+            <p>Gas Fee : ${quote.estimatedGas}</p>
+            <button class="btn btn-success btn-sm">
+                SWAP
+            </button>
+        `;
+    } catch (e) {
+        document.querySelector('.js-quote-container').innerHTML = `
+            <p class="error">The Conversion did not Succeed.<p>
+
+        `;
+    }
+
 }
 
-async function formCanceled(event){
+
+
+async function formCanceled(event) {
     event.preventDefault();             // preventDefault() method cancels the event if it is cancelable, ability to prevent a browser’s default behavior for events.
     document.querySelector('.js-submit').removeAttribute('disabled', '');   // empty string = ''
-    document.querySelector('.js-cancel').removeAttribute('disabled', '');   
-    $amountInput.value =''; // clear the value because it can happen it is already enabled 
+    document.querySelector('.js-cancel').removeAttribute('disabled', '');
+    $amountInput.value = ''; // clear the value because it can happen it is already enabled 
     $amountInput.removeAttribute('disabled', '');   // this enabled input values 
     delete $selectedToken.dataset.address;
     delete $selectedToken.dataset.decimals;
@@ -173,8 +210,13 @@ async function getTopTokens() {
 }
 
 async function getTickerData(tickerList) {   // the tickerList is transferred from getTopTokens result to getTickerData
-    const response = await fetch('https://api.1inch.exchange/v3.0/137/tokens');      // using binance smart chain network 
-    const tokens = await response.json();
+
+    const tokens = await Moralis.Plugins.oneInch.getSupportedTokens({
+        chain: 'polygon', // The blockchain you want to use (eth/bsc/polygon)
+    });
+
+    // await fetch('https://api.1inch.exchange/v3.0/137/tokens');      // using binance smart chain network 
+    // const tokens = await response.json();
     const tokenList = Object.values(tokens.tokens);
     let chainNetwork = tokenList.filter(token => tickerList.includes(token.symbol));    // tickers that contain a specific value
     console.log(chainNetwork)
@@ -182,14 +224,14 @@ async function getTickerData(tickerList) {   // the tickerList is transferred fr
 }
 
 // swap to 
-function renderTokenDropdown(tokens){
+function renderTokenDropdown(tokens) {
     const options = tokens.map(token => `
     // he value attribute specifies the value to be sent to a server when a form is submitted.
     <option value="${token.address}-${token.decimals}">
         ${token.name}
     </option>
     `).join('');
-    document.querySelector('[name=to-token]').innerHTML = options;
+    document.querySelector('[name=to-token]').innerHTML = options;  // you are naming this option values under to-token class name 
 }
 
 
