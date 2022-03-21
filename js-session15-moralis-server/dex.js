@@ -6,9 +6,15 @@
 // https://docs.moralis.io/moralis-server/web3-sdk/account
 
 // INITIALISATION
-// connect to Moralis server
+// connect to Moralis server polygon mainnet
 const serverUrl = "https://he1dnxwzzthg.usemoralis.com:2053/server";
 const appId = "lveyyGYcXiYZPWnCeu8JpY9TacSMGZHQFBdnkQAl";
+
+// eth mainnet
+// const serverUrl = "https://rtfgws5eqrha.usemoralis.com:2053/server";
+// const appId = "yy1fSrcm08gOwrIGsXeQBIAqDE6aVACqaQn9z9Rv";
+
+
 Moralis.start({ serverUrl, appId });
 
 // Moralis.initialize("lveyyGYcXiYZPWnCeu8JpY9TacSMGZHQFBdnkQAl");
@@ -43,7 +49,8 @@ async function login() {
     console.log("logged in user:", user);
     console.log(user.get("ethAddress"))
     const balances = await Moralis.Web3.getAllERC20({ chain: 'polygon' });
-    console.log(balances);  // provides what coins you hold
+    // const balances = await Moralis.Web3.getAllERC20();
+    // console.log(balances);  // provides what coins you hold
     getStats();
 }
 
@@ -71,15 +78,16 @@ async function initSwapForm(event) {
 async function getStats() {
     // await Moralis.enableWeb3();
     // const balances = await Moralis.Web3API.account.getTokenBalances({chain: 'bsc'});
-    // const balances = await Moralis.Web3API.account.getTokenBalances({chain: 'polygon'});    // chain = the blockchain to get data from
+    const balances = await Moralis.Web3API.account.getTokenBalances({chain: 'polygon'});    // chain = the blockchain to get data from
     // const balances = await Moralis.Web3.getAllERC20();
 
     // getTokenBalances will not include what you get with getNativeBalance, 
     // getNativeBalance will return only the native currency balance as ETH or 
     // BNB and getTokenBalances will return what tokens has that particular address
 
-    // const balances = await Moralis.Web3API.account.getTokenBalances({chain: 'polygon'});
-    const balances = await Moralis.Web3.getAllERC20({ chain: 'polygon' });
+    // const balances = await Moralis.Web3API.account.getTokenBalances({chain: 'eth'});
+    // const balances = await Moralis.Web3.getAllERC20();
+    // const balances = await Moralis.Web3API.account.getTokenBalances();
     // const balances = await Moralis.Web3API.account.getNativeBalance({chain: 'polygon'});
     console.log(balances);  // provides what coins you hold
     console.log("my balance ^");  // provides what coins you hold
@@ -142,8 +150,10 @@ async function formSubmitted(event) {
 
     // Submission of the quote request 
     const fromDecimals = $selectedToken.dataset.decimals;
-    const fromTokenAddress = $selectedToken.dataset.address
+    const fromTokenAddress = $selectedToken.dataset.address;
     const [toTokenAddress, toDecimals] = document.querySelector('[name=to-token]').value.split('-');
+    console.log(fromDecimals);
+    console.log(fromTokenAddress);
 
     // https://moralis.io/plugins/1inch/            // swap tokens on chain by using 1Inch plugin
     try {
@@ -151,21 +161,24 @@ async function formSubmitted(event) {
             chain: 'polygon', // The blockchain you want to use (eth/bsc/polygon)
             fromTokenAddress: fromTokenAddress, // The token you want to swap
             toTokenAddress: toTokenAddress, // The token you want to receive
-            amount: Moralis.Units.Token(fromAmount, fromDecimals).toString() // need to convert back to WEI
+            amount: Moralis.Units.Token(fromAmount, fromDecimals).toString(), // need to convert back to WEI
         });
         // const toAmount = tokenValue( , toDecimals);
         console.log(quote);
         //Example: We want to convert 0.5 BUSD. It has 18 decimals
         // const busdInWei = Moralis.Units.Token("0.5", "18")
         // expected result output: 500000000000000000 We
-        const toAmount = tokenValue(quote.toTokenAmount, toDecimals)
-        document.querySelector('.js-quote-container').innerHTML = `
-            <p>${fromAmount} ${quote.fromToken.symbol} = ${toAmount} ${quote.toToken.symbol}<p>
-            <p>Gas Fee : ${quote.estimatedGas}</p>
-            <button class="btn btn-success btn-sm">
-                SWAP
-            </button>
-        `;
+        // const toAmount = tokenValue(quote.toTokenAmount, toDecimals)
+
+        // document.querySelector('.js-quote-container').innerHTML = `
+        //     <p>
+        //         ${fromAmount} ${quote.fromToken.symbol} = 
+        //         ${toAmount} ${quote.toToken.symbol}
+        //     <p>
+        //     <p>Gas Fee : ${quote.estimatedGas}</p>
+
+        // `
+        // ;
     } catch (e) {
         document.querySelector('.js-quote-container').innerHTML = `
             <p class="error">The Conversion did not Succeed.<p>
@@ -211,11 +224,13 @@ async function getTopTokens() {
 
 async function getTickerData(tickerList) {   // the tickerList is transferred from getTopTokens result to getTickerData
 
+//  method 1 by using 1inch Moralis plugin
     const tokens = await Moralis.Plugins.oneInch.getSupportedTokens({
         chain: 'polygon', // The blockchain you want to use (eth/bsc/polygon)
     });
+    console.log(tokens);
 
-    // await fetch('https://api.1inch.exchange/v3.0/137/tokens');      // using binance smart chain network 
+    // const response = await fetch('https://api.1inch.exchange/v3.0/137/tokens');      // using binance smart chain network 
     // const tokens = await response.json();
     const tokenList = Object.values(tokens.tokens);
     let chainNetwork = tokenList.filter(token => tickerList.includes(token.symbol));    // tickers that contain a specific value
@@ -226,7 +241,6 @@ async function getTickerData(tickerList) {   // the tickerList is transferred fr
 // swap to 
 function renderTokenDropdown(tokens) {
     const options = tokens.map(token => `
-    // he value attribute specifies the value to be sent to a server when a form is submitted.
     <option value="${token.address}-${token.decimals}">
         ${token.name}
     </option>
